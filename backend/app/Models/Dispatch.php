@@ -21,11 +21,6 @@ class Dispatch extends Model
         'status',
     ];
 
-    public function getRouteKeyName()
-    {
-        return 'pea_dispatch_no';
-    }
-
     public function depot()
     {
         return $this->belongsTo(Depot::class, 'destination_depot_id');

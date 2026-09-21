@@ -22,18 +22,15 @@ class DispatchController extends Controller
                 ->with(['depot', 'confirmation.confirmedByUser'])
                 ->get();
         } elseif ($role === 'DRIVER') {
-            // Driver: prioritize dispatches for their vehicle plate, or fallback to all dispatches
+            // Driver: strictly only see dispatches assigned to their vehicle plate number
             $plate = trim($user->vehicle_plate_number ?? '');
-            $query = Dispatch::with(['depot', 'confirmation.confirmedByUser']);
             if (!empty($plate)) {
-                $matching = (clone $query)->whereRaw('LOWER(TRIM(vehicle_id)) = ?', [strtolower($plate)])->get();
-                if ($matching->isNotEmpty()) {
-                    $dispatches = $matching;
-                } else {
-                    $dispatches = $query->get();
-                }
+                $dispatches = Dispatch::with(['depot', 'confirmation.confirmedByUser'])
+                    ->whereRaw('LOWER(TRIM(vehicle_id)) = ?', [strtolower($plate)])
+                    ->get();
             } else {
-                $dispatches = $query->get();
+                // No plate assigned — return empty collection
+                $dispatches = collect([]);
             }
         } elseif ($role === 'OIL_COMPANY_ADMIN' || $role === 'OIL_COMPANY') {
             $dispatches = Dispatch::where('oil_company_id', $user->company_id)
