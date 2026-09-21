@@ -20,8 +20,8 @@ export default function DepotsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingDepot, setEditingDepot] = useState<Depot | null>(null)
   const isOilCompany = user?.role === 'OIL_COMPANY_ADMIN' || user?.role?.toUpperCase() === 'OIL_COMPANY'
-  const canAdd = isOilCompany || user?.role === 'EPA_ADMIN'
-  const canManage = canAdd
+  const canAdd = isOilCompany // PEA admin shouldn't create depots
+  const canManage = isOilCompany || user?.role === 'EPA_ADMIN'
 
   const { data: rawDepots = [], isLoading } = useQuery<Depot[]>({
     queryKey: ['depots'],

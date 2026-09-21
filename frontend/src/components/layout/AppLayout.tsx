@@ -65,7 +65,7 @@ function Sidebar({ onNavigate, role }: { onNavigate?: () => void, role: UserRole
     ? []
     : role === 'OIL_COMPANY_ADMIN'
       ? entitiesNav.filter(n => n.to !== '/entities/oil-companies')
-      : entitiesNav.filter(n => n.to !== '/entities/depots'); // PEA admin: no Depots (oil companies manage their own)
+      : entitiesNav; // PEA admin sees everything
 
   // DEPOT_ADMIN only sees Fuel Dispatch
   const filteredPrimaryNav = role === 'DEPOT_ADMIN'
@@ -124,7 +124,6 @@ export default function AppLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuth()
-  const [globalSearch, setGlobalSearch] = useState('')
 
   const handleLogout = () => {
     logout()
@@ -195,16 +194,6 @@ export default function AppLayout() {
               </div>
 
               <div className="hidden flex-1 px-6 lg:block">
-                {!isTracking && (
-                  <div className="relative max-w-xl mx-auto">
-                    <input
-                      value={globalSearch}
-                      onChange={(e) => setGlobalSearch(e.target.value)}
-                      placeholder="Search dispatches, vehicles, or depots..."
-                      className="w-full rounded-xl border border-[#D1D5DB] bg-muted/40 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-                    />
-                  </div>
-                )}
               </div>
 
               <div className="flex items-center gap-4">
