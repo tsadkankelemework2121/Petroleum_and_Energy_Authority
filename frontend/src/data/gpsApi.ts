@@ -2,7 +2,7 @@ import type { GpsVehicle } from './types'
 // import api from '../api/axios'
 
 const GPS_API_URL =
-  'https://mellatech.et/et/api/api.php?api=user&ver=1.0&key=4DC7C24EDCF88C5B3F8B03A72631DBF8&cmd=USER_GET_OBJECTS'
+  'https://mellatech.et/et/api/api.php?api=user&ver=1.0&key=4DC7C4EDCF88C5B3F8B03A72631DBF8&cmd=USER_GET_OBJECTS'
 
 export async function fetchGpsVehicles(): Promise<GpsVehicle[]> {
   // Start Mellatech and ZTrack fetches in parallel

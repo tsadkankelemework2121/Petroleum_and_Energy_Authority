@@ -90,15 +90,10 @@ export default function DispatchForm({
     )
   }, [availableVehicles, vehicleSearch])
 
-  // Update available depots dynamically 
+  // Allow all depots to be used, regardless of the selected oil company
   const availableDepots = useMemo(() => {
-    if (!formData.oilCompanyId) return []
-    const targetId = formData.oilCompanyId.trim().toLowerCase()
-    return depots.filter(d => {
-      const depotCompanyId = d.oilCompanyId || (d as any).oil_company_id
-      return depotCompanyId?.trim().toLowerCase() === targetId
-    })
-  }, [formData.oilCompanyId, depots])
+    return depots
+  }, [depots])
 
   // Auto-fill transporter when vehicle changes using custom_fields (not group)
   const handleVehicleSelect = (v: GpsVehicle) => {
@@ -231,7 +226,6 @@ export default function DispatchForm({
            <label className="block text-sm font-semibold mb-1 text-slate-700">Destination Depot *</label>
           <select
             required
-            disabled={!formData.oilCompanyId}
             value={formData.destinationDepotId}
             onChange={(e) => setFormData({ ...formData, destinationDepotId: e.target.value })}
             className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none focus:bg-white focus:ring-2 focus:ring-primary/20"
