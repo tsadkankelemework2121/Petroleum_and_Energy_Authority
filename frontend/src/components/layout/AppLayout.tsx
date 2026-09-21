@@ -73,7 +73,7 @@ function Sidebar({ onNavigate, role }: { onNavigate?: () => void, role: UserRole
     : primaryNav;
 
   return (
-    <div className="flex h-screen flex-col bg-white border-r border-[#D1D5DB] overflow-y-auto">
+    <div className="flex h-full flex-col bg-white overflow-y-auto">
       <div className="flex items-center gap-3 px-5 py-5">
         <div className="grid size-10 place-items-center overflow-hidden rounded-lg bg-white">
           <img
@@ -149,7 +149,7 @@ export default function AppLayout() {
   const role = user?.role || 'EPA_ADMIN'
 
   return (
-    <div className="h-full bg-bg">
+    <div className="h-full bg-white">
       <div className="flex h-full">
 
         {/* Desktop Sidebar */}

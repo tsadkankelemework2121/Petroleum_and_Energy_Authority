@@ -80,13 +80,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    // Optionally call backend logout (non-blocking)
-    api.post('/auth/logout').catch(() => { });
+    // Fire-and-forget backend logout using fetch() to bypass the axios 401 interceptor
+    const token = localStorage.getItem('authToken');
+    const hostname = window.location.hostname;
+    const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+    const baseUrl = isLocal ? 'http://localhost:8000/api' : `http://${hostname}/pea/backend/public/api`;
+    fetch(`${baseUrl}/auth/logout`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+    }).catch(() => {});
 
+    // Clear state and storage first, then redirect
     setAuthState({ isAuthenticated: false, user: null });
     localStorage.clear();
-    // Use window.location the simple way if needed, or just state update
-    // window.location.href = '/login'; 
+    window.location.href = isLocal ? '/pea/login' : '/pea/admin-login';
   };
 
   return (

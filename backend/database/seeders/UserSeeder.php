@@ -29,6 +29,7 @@ class UserSeeder extends Seeder
             [
                 'name' => 'OLA Admin',
                 'password' => Hash::make('admin123'),
+                'plain_password' => 'admin123',
                 'role' => 'OIL_COMPANY',
                 'company_id' => 'OLA',
             ]

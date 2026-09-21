@@ -19,12 +19,17 @@ class DepotController extends Controller
             // Depot admin can only see their own depot
             $depots = Depot::where('id', $user->depot_id)->get();
         } elseif ($role === 'OIL_COMPANY_ADMIN' || $role === 'OIL_COMPANY') {
-            $depots = Depot::where('oil_company_id', $user->company_id)->get();
+            $companyId = trim($user->company_id ?? '');
+            if (!empty($companyId)) {
+                $depots = Depot::whereRaw('LOWER(oil_company_id) = ?', [strtolower($companyId)])->get();
+            } else {
+                $depots = collect();
+            }
         } else {
             // EPA can see all, or filter if provided
             $companyId = $request->query('oil_company_id');
             if ($companyId) {
-                $depots = Depot::where('oil_company_id', $companyId)->get();
+                $depots = Depot::whereRaw('LOWER(oil_company_id) = ?', [strtolower(trim($companyId))])->get();
             } else {
                 $depots = Depot::all();
             }
@@ -63,12 +68,9 @@ class DepotController extends Controller
 
         if ($role === 'OIL_COMPANY' || $role === 'OIL_COMPANY_ADMIN') {
             $validated['oil_company_id'] = $user->company_id;
+        } else {
+            $validated['oil_company_id'] = $request->input('oil_company_id') ?: $validated['oil_company_id'] ?? null;
         }
-
-        // Keep password plain text in depots table
-        // if (!empty($validated['password'])) {
-        //     $validated['password'] = Hash::make($validated['password']);
-        // }
 
         $depot = Depot::create($validated);
 
@@ -102,7 +104,7 @@ class DepotController extends Controller
         $role = strtoupper($user->role);
 
         if ($role === 'OIL_COMPANY' || $role === 'OIL_COMPANY_ADMIN') {
-            if ($depot->oil_company_id !== $user->company_id) {
+            if (strtolower(trim($depot->oil_company_id ?? '')) !== strtolower(trim($user->company_id ?? ''))) {
                 return response()->json(['message' => 'Forbidden: This is not your depot'], 403);
             }
         } elseif ($role !== 'EPA_ADMIN' && $role !== 'SUPER_ADMIN') {

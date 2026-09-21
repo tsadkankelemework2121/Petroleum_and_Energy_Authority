@@ -66,15 +66,25 @@ export default function DashboardPage() {
     gold: '#f59e0b',
   }
 
+  const isOilCompanyUser = user?.role?.toUpperCase().includes('OIL_COMPANY')
+  const userCompanyId = companyId?.trim()?.toLowerCase()
+
+  const relevantVehicles = useMemo(() => {
+    if (isOilCompanyUser && userCompanyId) {
+      return gpsVehicles.filter((v) => String(v.group ?? '').trim().toLowerCase() === userCompanyId)
+    }
+    return gpsVehicles
+  }, [gpsVehicles, isOilCompanyUser, userCompanyId])
+
   // 3. Compute KPIs
   const kpiCards = useMemo(() => {
     const now = new Date()
 
     // Total vehicles count
-    const totalVehicles = gpsVehicles.length
+    const totalVehicles = relevantVehicles.length
 
     // Vehicles in Djibouti: lat 10.9-12.7, lng 41.7-43.5
-    const djiboutiCount = gpsVehicles.filter((v) => {
+    const djiboutiCount = relevantVehicles.filter((v) => {
       const lat = Number(v.lat)
       const lng = Number(v.lng)
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false
@@ -84,7 +94,7 @@ export default function DashboardPage() {
     const transit = dispatches.filter((d) => d.status === 'On transit').length
 
     // GPS offline > 24 hrs: parse duration from the status field
-    const offline = gpsVehicles.filter((v) => {
+    const offline = relevantVehicles.filter((v) => {
       const cat = getStatusCategory(v.status)
       if (cat !== 'offline') return false
       return parseStatusDurationHours(v.status) > 24
@@ -95,13 +105,13 @@ export default function DashboardPage() {
     ).length
 
     return [
-      { label: 'Total Vehicles', value: String(totalVehicles), hint: 'All tracked vehicles', icon: TruckIcon },
+      { label: 'Total Vehicles', value: String(totalVehicles), hint: isOilCompanyUser ? 'Company fleet' : 'All tracked vehicles', icon: TruckIcon },
       { label: 'Vehicles in Djibouti', value: String(djiboutiCount), hint: 'Inside Djibouti border', icon: GlobeAltIcon },
       { label: 'Vehicles on transit', value: String(transit), hint: 'Active dispatches now', icon: TruckIcon },
       { label: 'GPS offline > 24 hrs', value: String(offline), hint: 'Check connectivity', icon: SignalSlashIcon },
       { label: 'Exceeded ETA', value: String(exceeded), hint: 'Needs attention', icon: ExclamationTriangleIcon },
     ] as const
-  }, [dispatches, gpsVehicles])
+  }, [dispatches, relevantVehicles, isOilCompanyUser])
 
   // 4. Compute Daily Dispatch Summary (current week: Mon-Sun)
   const dailyDispatchSummary = useMemo(() => {

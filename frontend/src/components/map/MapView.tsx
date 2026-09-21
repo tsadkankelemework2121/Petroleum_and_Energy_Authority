@@ -31,17 +31,6 @@ export type MapApi = {
   fitBounds: (bounds: [[number, number], [number, number]], padding?: number) => void
 }
 
-type Props = {
-  center: Position
-  zoom?: number
-  markers?: MarkerType[]
-  selectedMarkerId?: string
-  onMarkerSelect?: (id: string) => void
-  onMapReady?: (api: MapApi) => void
-  styleUrl?: string
-  className?: string
-  isClustered?: boolean
-}
 
 // MapController exposes the imperative API and syncs bounds for supercluster
 type MapControllerProps = {
@@ -114,44 +103,123 @@ const getDirectionArrow = (deg: number) => {
 const vehicleIconCache = new Map<string, L.DivIcon>()
 
 const getVehicleIcon = (m: MarkerType, isSelected: boolean) => {
-  const size = isSelected ? 14 : 10
+  // Fuel tanker proportions (typically ~1:3.2 width-to-length ratio)
+  const baseW = isSelected ? 22 : 16
+  const baseH = isSelected ? 48 : 36
   const angle = m.angle ?? 0
   const plateName = m.label?.split(' ')[0] ?? ''
   const color = m.color ?? '#94a3b8'
   
-  const cacheKey = `${m.id}-${size}-${angle}-${color}-${plateName}-${isSelected}`
+  const cacheKey = `${m.id}-${baseW}-${baseH}-${angle}-${color}-${plateName}-${isSelected}`
   const cached = vehicleIconCache.get(cacheKey)
   if (cached) return cached
   
   const directionArrow = getDirectionArrow(angle)
 
+  // Top-down precision SVG of a heavy commercial fuel tanker truck
   const html = `
-    <div style="position: relative; display: flex; flex-direction: column; align-items: center; width: ${size * 1.5}px; height: ${size * 2.5}px;">
-      ${isSelected && m.label ? `<div style="position: absolute; bottom: 100%; margin-bottom: 6px; background: white; padding: 4px 8px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 11px; font-weight: 700; white-space: nowrap; color: #0f172a; border: 1px solid ${m.color ?? '#e2e8f0'}; z-index: 10; display: flex; align-items: center; gap: 4px; left: 50%; transform: translateX(-50%);">
-        <span>${plateName}</span>
-        <span style="color: ${m.color ?? '#0f172a'}; font-size: 13px;">${directionArrow}</span>
-      </div>` : ''}
-      <div style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); transition: all 0.2s ease; transform: rotate(${angle}deg); transform-origin: center;">
-        <svg viewBox="0 0 64 128" width="${size * 1.5}" height="${size * 2.5}">
-          <rect x="8" y="24" width="8" height="20" rx="3" fill="#1e293b" />
-          <rect x="48" y="24" width="8" height="20" rx="3" fill="#1e293b" />
-          <rect x="6" y="70" width="8" height="20" rx="3" fill="#1e293b" />
-          <rect x="50" y="70" width="8" height="20" rx="3" fill="#1e293b" />
-          <rect x="6" y="96" width="8" height="20" rx="3" fill="#1e293b" />
-          <rect x="50" y="96" width="8" height="20" rx="3" fill="#1e293b" />
-          <path d="M 14 26 C 14 10 24 4 32 4 C 40 4 50 10 50 26 L 50 42 C 50 48 48 52 40 52 L 24 52 C 16 52 14 48 14 42 Z" fill="${color}" />
-          <path d="M 18 30 L 46 30 L 44 14 C 44 14 40 10 32 10 C 24 10 20 14 20 14 Z" fill="#38bdf8" opacity="0.9" />
-          <rect x="22" y="34" width="20" height="12" rx="4" fill="#ffffff" opacity="0.3" />
-          <rect x="28" y="52" width="8" height="10" fill="#475569" />
-          <rect x="10" y="60" width="44" height="64" rx="10" fill="#f8fafc" stroke="${m.color ?? '#cbd5e1'}" stroke-width="3" />
-          <line x1="12" y1="76" x2="52" y2="76" stroke="${m.color ?? '#cbd5e1'}" stroke-width="2" opacity="0.5" />
-          <line x1="12" y1="92" x2="52" y2="92" stroke="${m.color ?? '#cbd5e1'}" stroke-width="2" opacity="0.5" />
-          <line x1="12" y1="108" x2="52" y2="108" stroke="${m.color ?? '#cbd5e1'}" stroke-width="2" opacity="0.5" />
-          <circle cx="32" cy="68" r="4" fill="#94a3b8" />
-          <circle cx="32" cy="84" r="4" fill="#94a3b8" />
-          <circle cx="32" cy="100" r="4" fill="#94a3b8" />
-          <circle cx="32" cy="116" r="4" fill="#94a3b8" />
-          <line x1="20" y1="62" x2="20" y2="122" stroke="#ffffff" stroke-width="2" opacity="0.7" />
+    <div style="position: relative; display: flex; flex-direction: column; align-items: center; width: ${baseW}px; height: ${baseH}px;">
+      ${isSelected && m.label ? `
+        <div style="position: absolute; bottom: 100%; margin-bottom: 8px; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(4px); padding: 4px 9px; border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,0.3); font-size: 11px; font-weight: 700; white-space: nowrap; color: #ffffff; border: 1.5px solid ${color}; z-index: 50; display: flex; align-items: center; gap: 5px; left: 50%; transform: translateX(-50%); pointer-events: none;">
+          <span style="letter-spacing: 0.5px;">${plateName}</span>
+          <span style="color: ${color}; font-size: 13px;">${directionArrow}</span>
+        </div>` : ''}
+      <div style="width: ${baseW}px; height: ${baseH}px; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 3px 5px rgba(0,0,0,0.38)); transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1); transform: rotate(${angle}deg); transform-origin: center center;">
+        <svg viewBox="0 0 32 72" width="${baseW}" height="${baseH}" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <!-- Tank cylindrical gradient -->
+            <linearGradient id="tankGrad-${m.id}" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#334155" />
+              <stop offset="18%" stop-color="#cbd5e1" />
+              <stop offset="50%" stop-color="#ffffff" />
+              <stop offset="82%" stop-color="#cbd5e1" />
+              <stop offset="100%" stop-color="#475569" />
+            </linearGradient>
+            <!-- Cabin metallic hood gradient -->
+            <linearGradient id="cabGrad-${m.id}" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#0f172a" stop-opacity="0.3" />
+              <stop offset="50%" stop-color="#ffffff" stop-opacity="0.4" />
+              <stop offset="100%" stop-color="#0f172a" stop-opacity="0.3" />
+            </linearGradient>
+            <!-- Status glow -->
+            <filter id="glow-${m.id}" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="${color}" flood-opacity="0.8" />
+            </filter>
+          </defs>
+
+          <!-- ====== HEAVY DUTY WHEELS & CHASSIS AXLES ====== -->
+          <!-- Front steer wheels (Cab) -->
+          <rect x="2" y="9" width="3.5" height="7.5" rx="1.5" fill="#0f172a" />
+          <rect x="26.5" y="9" width="3.5" height="7.5" rx="1.5" fill="#0f172a" />
+
+          <!-- Drive axle duals (Tractor rear) -->
+          <rect x="3" y="27" width="3" height="7" rx="1.2" fill="#0f172a" />
+          <rect x="26" y="27" width="3" height="7" rx="1.2" fill="#0f172a" />
+
+          <!-- Tanker trailer dual bogie wheels (Rear Axle 1) -->
+          <rect x="2.5" y="52" width="3.2" height="7" rx="1.2" fill="#0f172a" />
+          <rect x="26.3" y="52" width="3.2" height="7" rx="1.2" fill="#0f172a" />
+
+          <!-- Tanker trailer dual bogie wheels (Rear Axle 2) -->
+          <rect x="2.5" y="61" width="3.2" height="7" rx="1.2" fill="#0f172a" />
+          <rect x="26.3" y="61" width="3.2" height="7" rx="1.2" fill="#0f172a" />
+
+          <!-- Fifth wheel / hitch turntable coupling -->
+          <rect x="13.5" y="25" width="5" height="5" rx="1" fill="#1e293b" />
+          <circle cx="16" cy="27.5" r="1.5" fill="#64748b" />
+
+          <!-- ====== TRACTOR CABIN (Front) ====== -->
+          <!-- Main cab body -->
+          <path d="M 6.5 7 Q 6.5 2 16 2 Q 25.5 2 25.5 7 L 25 24 L 7 24 Z" fill="${color}" />
+          <path d="M 6.5 7 Q 6.5 2 16 2 Q 25.5 2 25.5 7 L 25 24 L 7 24 Z" fill="url(#cabGrad-${m.id})" />
+
+          <!-- Aerodynamic side mirrors -->
+          <rect x="2" y="10" width="4" height="2" rx="0.8" fill="#1e293b" />
+          <rect x="26" y="10" width="4" height="2" rx="0.8" fill="#1e293b" />
+
+          <!-- Front Windshield & curved glass -->
+          <path d="M 8.5 8 Q 16 5.5 23.5 8 L 22.5 13 Q 16 11 9.5 13 Z" fill="#0284c7" opacity="0.95" />
+          <!-- Windshield wiper/reflection -->
+          <path d="M 11 8.5 Q 16 7 21 8.5" stroke="#bae6fd" stroke-width="0.8" stroke-linecap="round" opacity="0.9" />
+
+          <!-- Cabin Roof Panel / Air Deflector -->
+          <rect x="10" y="14" width="12" height="8" rx="1.5" fill="${color}" stroke="#0f172a" stroke-width="0.5" />
+          <!-- Amber marker lights on roof -->
+          <circle cx="11.5" cy="4" r="0.8" fill="#f59e0b" />
+          <circle cx="16" cy="3.5" r="0.8" fill="#f59e0b" />
+          <circle cx="20.5" cy="4" r="0.8" fill="#f59e0b" />
+
+          <!-- ====== CYLINDRICAL FUEL TANKER TRAILER ====== -->
+          <!-- Heavy tanker outer shell -->
+          <rect x="5.5" y="27" width="21" height="42" rx="6.5" fill="url(#tankGrad-${m.id})" stroke="#334155" stroke-width="1" />
+
+          <!-- Front dome cap curvature -->
+          <path d="M 7 32 Q 16 28 25 32" stroke="#475569" stroke-width="0.8" fill="none" opacity="0.7" />
+          <!-- Rear dome cap curvature -->
+          <path d="M 7 64 Q 16 68 25 64" stroke="#475569" stroke-width="0.8" fill="none" opacity="0.7" />
+
+          <!-- Tank top catwalk / safety walkway -->
+          <rect x="13" y="31" width="6" height="34" rx="1" fill="#475569" opacity="0.85" />
+
+          <!-- Fuel Tank Manholes / Fill Hatches (Compartments 1, 2, 3) -->
+          <circle cx="16" cy="36" r="2.4" fill="#1e293b" stroke="#94a3b8" stroke-width="0.7" />
+          <circle cx="16" cy="36" r="1.1" fill="${color}" />
+
+          <circle cx="16" cy="48" r="2.4" fill="#1e293b" stroke="#94a3b8" stroke-width="0.7" />
+          <circle cx="16" cy="48" r="1.1" fill="${color}" />
+
+          <circle cx="16" cy="60" r="2.4" fill="#1e293b" stroke="#94a3b8" stroke-width="0.7" />
+          <circle cx="16" cy="60" r="1.1" fill="${color}" />
+
+          <!-- Side discharge pipe / hose tubes -->
+          <line x1="6.8" y1="33" x2="6.8" y2="63" stroke="#64748b" stroke-width="1.2" stroke-linecap="round" />
+          <line x1="25.2" y1="33" x2="25.2" y2="63" stroke="#64748b" stroke-width="1.2" stroke-linecap="round" />
+
+          <!-- Rear Hazchem / Flammable Liquid Diamond Placard -->
+          <rect x="14" y="65.5" width="4" height="4" rx="0.5" fill="#dc2626" transform="rotate(45 16 67.5)" stroke="#ffffff" stroke-width="0.5" />
+
+          <!-- Dynamic Status Beacon / GPS Telemetry LED (Active Pulse Indicator) -->
+          <circle cx="16" cy="18" r="2" fill="${color}" filter="url(#glow-${m.id})" stroke="#ffffff" stroke-width="0.7" />
         </svg>
       </div>
     </div>
@@ -159,8 +227,8 @@ const getVehicleIcon = (m: MarkerType, isSelected: boolean) => {
   const icon = L.divIcon({
     html,
     className: '', 
-    iconSize: [size * 1.5, size * 2.5],
-    iconAnchor: [(size * 1.5) / 2, size * 2.5]
+    iconSize: [baseW, baseH],
+    iconAnchor: [baseW / 2, baseH / 2]
   })
   
   vehicleIconCache.set(cacheKey, icon)
@@ -235,6 +303,45 @@ const getClusterIcon = (cluster: unknown, supercluster: unknown) => {
   return icon
 }
 
+export const MAP_STYLES = {
+  voyager: {
+    name: 'Logistics (HD)',
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20
+  },
+  satellite: {
+    name: 'Satellite',
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+    subdomains: 'abc',
+    maxZoom: 19
+  },
+  dark: {
+    name: 'Night Ops',
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20
+  }
+} as const
+
+export type MapStyleKey = keyof typeof MAP_STYLES
+
+type Props = {
+  center: Position
+  zoom?: number
+  markers?: MarkerType[]
+  selectedMarkerId?: string
+  onMarkerSelect?: (id: string) => void
+  onMapReady?: (api: MapApi) => void
+  styleUrl?: string
+  styleKey?: MapStyleKey
+  className?: string
+  isClustered?: boolean
+}
+
 export default function MapView({
   center,
   zoom = 9,
@@ -242,10 +349,15 @@ export default function MapView({
   selectedMarkerId,
   onMarkerSelect,
   onMapReady,
-  styleUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 
+  styleUrl,
+  styleKey = 'voyager',
   className,
   isClustered = false
 }: Props) {
+  const activeStyle = MAP_STYLES[styleKey] || MAP_STYLES.voyager
+  const tileUrl = styleUrl || activeStyle.url
+  const tileAttribution = activeStyle.attribution
+  const tileSubdomains = activeStyle.subdomains
   const apiRef = useRef<MapApi | null>(null)
 
   const [bounds, setBounds] = useState<[number, number, number, number] | undefined>(undefined)
@@ -348,8 +460,11 @@ export default function MapView({
         zoomControl={false}
       >
         <TileLayer
-          url={styleUrl}
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          key={tileUrl}
+          url={tileUrl}
+          attribution={tileAttribution}
+          subdomains={tileSubdomains}
+          maxZoom={activeStyle.maxZoom}
         />
         <Polygon
           positions={DJIBOUTI_ZONE}

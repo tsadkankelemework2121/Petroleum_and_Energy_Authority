@@ -52,6 +52,7 @@ export type Vehicle = {
   sideNo: string
   driverName: string
   driverPhone: string
+  oilCompany?: string | null
 }
 
 export type Transporter = {

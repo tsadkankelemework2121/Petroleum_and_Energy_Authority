@@ -1,6 +1,13 @@
 import axios from 'axios';
 
-const dynamicBaseUrl = `http://${window.location.hostname}/pea/backend/public/api`;
+const hostname = window.location.hostname;
+const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+
+// Local dev: php artisan serve runs on port 8000, routes are at /api/*
+// Deployed: Apache/Nginx serves at /pea/backend/public/api/*
+const dynamicBaseUrl = isLocal
+  ? 'http://localhost:8000/api'
+  : `http://${hostname}/pea/backend/public/api`;
 
 const api = axios.create({
   baseURL: dynamicBaseUrl,
@@ -36,30 +43,10 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       // Clear storage and redirect to login if unauthorized
       localStorage.clear();
-      window.location.href = '/pea/login';
+      window.location.href = '/pea/admin-login';
     }
     return Promise.reject(error);
   }
 );
 
 export default api;
-//on local working code
-// import axios from 'axios';
-
-// const hostname = window.location.hostname;
-// const apiHost =
-//   hostname === 'localhost' || hostname === '127.0.0.1'
-//     ? '192.168.1.4' // IP here
-//     : hostname;
-
-// const dynamicBaseUrl = `http://${apiHost}/pea/backend/public/api`;
-
-// const api = axios.create({
-//   baseURL: dynamicBaseUrl,
-//   headers: {
-//     'Content-Type': 'application/json',
-//     Accept: 'application/json',
-//   },
-// });
-
-// export default api;

@@ -5,12 +5,17 @@ export default function DepotForm({
   onSubmit,
   companyId,
   editingDepot,
+  oilCompanies,
 }: {
   onClose: () => void
   onSubmit: (depot: any) => void
   companyId?: string
   editingDepot?: any
+  oilCompanies?: any[]
 }) {
+  const [selectedCompanyId, setSelectedCompanyId] = useState(
+    editingDepot?.oilCompanyId || editingDepot?.oil_company_id || companyId || ''
+  )
   const [formData, setFormData] = useState({
     name: editingDepot?.name || '',
     region: editingDepot?.location?.region || editingDepot?.region || '',
@@ -63,7 +68,7 @@ export default function DepotForm({
       lat: formData.lat ? Number(formData.lat) : null,
       lng: formData.lng ? Number(formData.lng) : null,
       map_link: mapLink || null,
-      oil_company_id: companyId,
+      oil_company_id: companyId || selectedCompanyId,
     }
     if (formData.password) {
       payload.password = formData.password
@@ -74,6 +79,34 @@ export default function DepotForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
+        {!companyId && (
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-semibold text-text mb-1">
+              Assigned Oil Company (Group) *
+            </label>
+            <select
+              required
+              value={selectedCompanyId}
+              onChange={(e) => setSelectedCompanyId(e.target.value)}
+              className="w-full rounded-lg border border-[#D1D5DB] bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+            >
+              <option value="">Select Oil Company...</option>
+              {oilCompanies?.map((c) => {
+                const cId = c.company_id || c.name || c.id
+                const cName = c.name || c.company_id || c.id
+                return (
+                  <option key={cId} value={cId}>
+                    {cName}
+                  </option>
+                )
+              })}
+            </select>
+            <p className="mt-1 text-[11px] text-text-muted">
+              Select which oil company this depot belongs to.
+            </p>
+          </div>
+        )}
+
         <div className="sm:col-span-2">
           <label className="block text-sm font-semibold text-text mb-1">Depot Name *</label>
           <input

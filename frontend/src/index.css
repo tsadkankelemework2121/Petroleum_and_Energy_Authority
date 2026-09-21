@@ -30,14 +30,19 @@ html,
 body,
 #root {
   height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #ffffff;
 }
 
 /* Base styles */
 body {
   margin: 0;
+  padding: 0;
   color: var(--color-text);
-  background: var(--color-bg);
+  background-color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Misc */

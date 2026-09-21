@@ -22,6 +22,7 @@ class User extends Authenticatable
         'role',
         'company_id',
         'depot_id',
+        'plain_password',
     ];
 
     /**

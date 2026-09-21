@@ -60,7 +60,7 @@ export default function TransporterCard({
         <table className="hidden md:table w-full text-left text-sm relative">
           <thead className="bg-muted text-xs text-text-muted sticky top-0 z-10 shadow-sm border-b border-[#D1D5DB]">
             <tr>
-              {['Plate', 'Trailer', 'Side', 'Driver'].map((h) => (
+              {['Plate', 'Oil Company', 'Trailer', 'Side', 'Driver'].map((h) => (
                 <th key={h} className="whitespace-nowrap px-4 py-3 font-semibold text-text-muted">
                   {h}
                 </th>
@@ -70,7 +70,7 @@ export default function TransporterCard({
           <tbody className="divide-y divide-[#D1D5DB]">
             {filteredVehicles.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-text-muted text-xs">
+                <td colSpan={5} className="px-4 py-8 text-center text-text-muted text-xs">
                   No vehicles found.
                 </td>
               </tr>
@@ -86,6 +86,9 @@ export default function TransporterCard({
                     }`}>
                       {v.id.startsWith('ztrack_') ? 'ztrack' : 'mella'}
                     </span>
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-2.5 text-text font-medium">
+                    {v.oilCompany ?? 'null'}
                   </td>
                   <td className="whitespace-nowrap px-4 py-2.5 text-text">{v.trailerRegNo}</td>
                   <td className="whitespace-nowrap px-4 py-2.5 text-text">{v.sideNo}</td>
@@ -118,7 +121,9 @@ export default function TransporterCard({
                         {v.id.startsWith('ztrack_') ? 'ztrack' : 'mella'}
                       </span>
                     </div>
-                    <div className="text-xs text-text-muted mt-0.5">{v.driverName}</div>
+                    <div className="text-xs text-text-muted mt-0.5">
+                      Oil Company: <span className="font-medium text-text">{v.oilCompany ?? 'null'}</span>
+                    </div>
                   </div>
                   <svg
                     className={`size-4 text-text-muted shrink-0 transition-transform duration-200 ${
@@ -134,6 +139,10 @@ export default function TransporterCard({
                 </div>
                 {expandedVehicle === v.id && (
                   <div className="mt-2 pt-2 border-t border-[#D1D5DB] grid grid-cols-2 gap-2 text-xs animate-fade-in-up">
+                    <div>
+                      <span className="text-text-muted">Driver:</span>{' '}
+                      <span className="font-medium text-text">{v.driverName}</span>
+                    </div>
                     <div>
                       <span className="text-text-muted">Trailer:</span>{' '}
                       <span className="font-medium text-text">{v.trailerRegNo}</span>

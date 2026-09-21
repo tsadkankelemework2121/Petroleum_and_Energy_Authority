@@ -84,12 +84,46 @@ export default function FuelDispatchPage() {
     },
   })
 
+  const { data: registeredCompanies = [] } = useQuery({
+    queryKey: ['oil-companies'],
+    queryFn: async () => {
+      try {
+        const res = await api.get('/oil-companies')
+        return res.data || []
+      } catch {
+        return []
+      }
+    },
+  })
+
   const isInitialLoading = isDispatchesLoading || isDepotsLoading || isVehiclesLoading
 
-  // Derived Mappings
+  // Derived Mappings (Dynamic from GPS vehicle groups and registered accounts, no hardcoded OLA)
   const oilCompanies = useMemo(() => {
-    return [{ id: 'OLA', name: 'OLA', contacts: {} }]
-  }, [])
+    const set = new Set<string>()
+    vehicles.forEach((v) => {
+      const g = v.group?.trim()
+      if (g && g.toLowerCase() !== 'null' && g.toLowerCase() !== 'undefined') {
+        set.add(g)
+      }
+    })
+    registeredCompanies.forEach((rc: any) => {
+      const name = (rc.company_id || rc.name || '').trim()
+      if (name && name.toLowerCase() !== 'null') {
+        set.add(name)
+      }
+    })
+    if (user?.companyId) {
+      set.add(user.companyId.trim())
+    }
+    return Array.from(set)
+      .sort()
+      .map((name) => ({
+        id: name,
+        name: name,
+        contacts: {},
+      }))
+  }, [vehicles, registeredCompanies, user?.companyId])
 
   const depotsById = useMemo(() => new Map(depots.map((d) => [d.id, d] as const)), [depots])
 

@@ -50,7 +50,14 @@ export default function DepotTable({
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 <td className="px-6 py-4">
-                  <div className="text-sm font-semibold text-text">{depot.name}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-semibold text-text">{depot.name}</div>
+                    {depot.oilCompanyId && (
+                      <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                        {depot.oilCompanyId}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-text-muted mt-1">ID: {depot.id}</div>
                 </td>
                 <td className="px-6 py-4">
@@ -148,7 +155,14 @@ export default function DepotTable({
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <div className="font-semibold text-sm text-text truncate">{depot.name}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="font-semibold text-sm text-text truncate">{depot.name}</div>
+                    {depot.oilCompanyId && (
+                      <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                        {depot.oilCompanyId}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-text-muted mt-0.5">
                     {depot.location.city}, {depot.location.region}
                   </div>

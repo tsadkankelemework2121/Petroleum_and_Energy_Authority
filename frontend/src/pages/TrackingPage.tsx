@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useDeferredValue, useCallback } from 'react'
 import { fetchGpsVehicles } from '../data/gpsApi'
 import type { GpsVehicle } from '../data/types'
-import MapView from '../components/map/MapView'
+import MapView, { type MapStyleKey } from '../components/map/MapView'
 import { useQuery } from '@tanstack/react-query'
 import api from '../api/axios'
 import { useAuth } from '../context/AuthContext'
@@ -32,6 +32,7 @@ export default function TrackingPage() {
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined)
   const [statusFilter, setStatusFilter] = useState('All')
   const [assignmentFilter, setAssignmentFilter] = useState('All')
+  const [mapStyle, setMapStyle] = useState<MapStyleKey>('voyager')
 
   const deferredSearch = useDeferredValue(search)
   const deferredStatus = useDeferredValue(statusFilter)
@@ -111,14 +112,28 @@ export default function TrackingPage() {
     return map
   }, [depots])
 
+  const isOilCompanyUser = user?.role?.toUpperCase().includes('OIL_COMPANY')
+  const userCompanyId = user?.companyId?.trim()?.toLowerCase()
+
   const combinedItems = useMemo(() => {
-    const allItems = [...items]
+    const baseItems = isOilCompanyUser && userCompanyId
+      ? items.filter((v) => String(v.group ?? '').trim().toLowerCase() === userCompanyId)
+      : items
+
+    const allItems = [...baseItems]
     const itemNames = new Set(allItems.map((v) => String(v.name).trim()))
     const itemImeis = new Set(allItems.map((v) => String(v.imei).trim()))
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dispatches.forEach((d: any) => {
       if (d.status && d.status.toLowerCase() !== 'delivered') {
+        // If oil company user, only include dispatches for their company
+        if (isOilCompanyUser && userCompanyId) {
+          if (String(d.oilCompanyId ?? '').trim().toLowerCase() !== userCompanyId) {
+            return
+          }
+        }
+
         const dVehicleId = String(d.vehicleId).trim()
         const isExisting = allItems.find(
           (v) => String(v.imei).trim() === dVehicleId || String(v.name).trim() === dVehicleId
@@ -146,7 +161,7 @@ export default function TrackingPage() {
       }
     })
     return allItems
-  }, [items, dispatches])
+  }, [items, dispatches, isOilCompanyUser, userCompanyId])
 
   const activeDispatchesByVehicle = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -215,7 +230,13 @@ export default function TrackingPage() {
   const filtered = useMemo(() => {
     const q = deferredSearch.trim().toLowerCase()
 
-    return items.filter((t) => {
+    return combinedItems.filter((t) => {
+      // If logged in as Oil Company, only show vehicles belonging to that company's group
+      if (isOilCompanyUser && userCompanyId) {
+        const vehicleGroup = String(t.group ?? '').trim().toLowerCase()
+        if (vehicleGroup !== userCompanyId) return false
+      }
+
       const searchHay = [t.name, t.imei, t.group ?? '', t.status, t.engine].join(' ').toLowerCase()
       const searchMatch = !q || searchHay.includes(q)
 
@@ -225,20 +246,20 @@ export default function TrackingPage() {
         deferredStatus === 'All'
           ? true
           : deferredStatus.toUpperCase() === 'DJIBOUTI'
-          ? isInsideDjibouti
-          : tag.label.toUpperCase() === deferredStatus.toUpperCase()
+            ? isInsideDjibouti
+            : tag.label.toUpperCase() === deferredStatus.toUpperCase()
 
       const isAssigned = activeDispatchesByVehicle.has(t.imei)
       const assignmentMatch =
         deferredAssignment === 'All'
           ? true
           : deferredAssignment === 'Assigned'
-          ? isAssigned
-          : !isAssigned
+            ? isAssigned
+            : !isAssigned
 
       return searchMatch && statusMatch && assignmentMatch
     })
-  }, [items, deferredSearch, deferredStatus, deferredAssignment, activeDispatchesByVehicle, statusTag])
+  }, [combinedItems, isOilCompanyUser, userCompanyId, deferredSearch, deferredStatus, deferredAssignment, activeDispatchesByVehicle, statusTag])
 
   const fleetListItems = filtered
 
@@ -260,10 +281,10 @@ export default function TrackingPage() {
           tag.label === 'MOVING'
             ? '#22c55e'
             : tag.label === 'IDLE'
-            ? COLORS.gold
-            : tag.label === 'OFFLINE'
-            ? COLORS.gray
-            : '#ef4444'
+              ? COLORS.gold
+              : tag.label === 'OFFLINE'
+                ? COLORS.gray
+                : '#ef4444'
 
         let statusLabel = dispatch ? `Dispatch: ${dispatch.status}` : t.status
         if (dispatch && dispatch.status === 'On transit') markerColor = '#1c8547'
@@ -382,6 +403,7 @@ export default function TrackingPage() {
         zoom={6}
         markers={markers}
         isClustered={isClustered}
+        styleKey={mapStyle}
         selectedMarkerId={selectedId}
         onMarkerSelect={(id) => {
           setSelectedId(id)
@@ -438,6 +460,8 @@ export default function TrackingPage() {
       <TrackingMapControls
         isClustered={isClustered}
         setIsClustered={setIsClustered}
+        mapStyle={mapStyle}
+        setMapStyle={setMapStyle}
         onFitBounds={() => {
           if (mapBounds) mapApiRef.current?.fitBounds(mapBounds)
         }}

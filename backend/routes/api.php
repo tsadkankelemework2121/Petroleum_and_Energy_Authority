@@ -12,6 +12,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
 
+    Route::get('/oil-companies', [AuthController::class, 'getOilCompanies']);
+    Route::post('/oil-companies', [AuthController::class, 'createOilCompany']);
+    Route::put('/oil-companies/{id}', [AuthController::class, 'updateOilCompany']);
+
     Route::apiResource('depots', DepotController::class);
 
     Route::post('/dispatches/{dispatch}/deliver', [DispatchController::class, 'markAsDelivered']);

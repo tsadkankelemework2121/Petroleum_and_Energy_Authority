@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import api from '../api/axios'
 import type { Depot } from '../data/types'
 import { mapDepot } from '../data/types'
@@ -19,18 +19,41 @@ export default function DepotsPage() {
   const queryClient = useQueryClient()
   const [showForm, setShowForm] = useState(false)
   const [editingDepot, setEditingDepot] = useState<Depot | null>(null)
+  const isOilCompany = user?.role === 'OIL_COMPANY_ADMIN' || user?.role?.toUpperCase() === 'OIL_COMPANY'
+  const canAdd = isOilCompany || user?.role === 'EPA_ADMIN'
+  const canManage = canAdd
 
-  const canAdd = user?.role === 'OIL_COMPANY_ADMIN' || user?.role?.toUpperCase() === 'OIL_COMPANY'
-  const canManage = canAdd || user?.role === 'EPA_ADMIN'
-
-  const { data: items = [], isLoading } = useQuery<Depot[]>({
+  const { data: rawDepots = [], isLoading } = useQuery<Depot[]>({
     queryKey: ['depots'],
     queryFn: async () => {
-      const res = await api.get('/depots', { params: { oil_company_id: user?.companyId } })
+      const res = await api.get('/depots', { params: user?.companyId ? { oil_company_id: user.companyId } : {} })
       return res.data.map(mapDepot)
     },
     enabled: !!user?.companyId || user?.role === 'EPA_ADMIN',
   })
+
+  // Fetch available oil companies for PEA Admin creating depots
+  const { data: registeredOilCompanies = [] } = useQuery({
+    queryKey: ['oil-companies'],
+    queryFn: async () => {
+      try {
+        const res = await api.get('/oil-companies')
+        return res.data || []
+      } catch {
+        return []
+      }
+    },
+    enabled: user?.role === 'EPA_ADMIN',
+  })
+
+  // Strict isolation: if Oil Company user is logged in, only show their depots
+  const items = useMemo(() => {
+    if (isOilCompany && user?.companyId) {
+      const target = user.companyId.trim().toLowerCase()
+      return rawDepots.filter((d) => (d.oilCompanyId || '').trim().toLowerCase() === target)
+    }
+    return rawDepots
+  }, [rawDepots, isOilCompany, user?.companyId])
 
   const openGoogleMaps = (depot: Depot) => {
     if (depot.mapLink) {
@@ -100,6 +123,7 @@ export default function DepotsPage() {
         <DepotForm
           companyId={user?.companyId}
           editingDepot={editingDepot}
+          oilCompanies={registeredOilCompanies}
           onClose={() => {
             setShowForm(false)
             setEditingDepot(null)

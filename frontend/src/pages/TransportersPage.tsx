@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { fetchGpsVehicles } from '../data/gpsApi'
 import type { Transporter, Vehicle } from '../data/types'
+import { extractTransporterName } from '../lib/vehicleUtils'
 import PageHeader from '../components/layout/PageHeader'
 import { useAuth } from '../context/AuthContext'
 import { ModalOverlay } from '../components/ui/ModelOverlay'
@@ -30,8 +31,9 @@ export default function TransportersPage() {
 
     // Start with API data
     vehicles.forEach((v) => {
-      const transName = v.group || ''
-      if (!transName) return
+      // For transporters, use custom_fields (if null, show as 'null')
+      const extractedTrans = extractTransporterName(v.custom_fields)
+      const transName = extractedTrans ?? 'null'
 
       let transporter = transportersMap.get(transName)
       if (!transporter) {
@@ -41,7 +43,7 @@ export default function TransportersPage() {
           location: { region: '—', city: '—', address: '—' },
           contacts: {},
           vehicles: [],
-          oilCompanyId: v.group || undefined,
+          oilCompanyId: v.group ?? undefined,
         }
         transportersMap.set(transName, transporter)
       }
@@ -56,6 +58,7 @@ export default function TransportersPage() {
         model: '—',
         yearOfManufacture: new Date().getFullYear(),
         driverPhone: '—',
+        oilCompany: v.group ?? 'null',
       })
     })
 

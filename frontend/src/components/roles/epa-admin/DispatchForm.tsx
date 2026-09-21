@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, useRef } from 'react'
 import api from '../../../api/axios'
 import type { Depot, DispatchTask, FuelType, OilCompany, GpsVehicle } from '../../../data/types'
 import { useAuth } from '../../../context/AuthContext'
+import { extractTransporterName } from '../../../lib/vehicleUtils'
 
 export default function DispatchForm({
   oilCompanies,
@@ -99,13 +100,13 @@ export default function DispatchForm({
     })
   }, [formData.oilCompanyId, depots])
 
-  // Auto-fill transporter when vehicle changes
+  // Auto-fill transporter when vehicle changes using custom_fields (not group)
   const handleVehicleSelect = (v: GpsVehicle) => {
-    const transporterName = v.group || ''
+    const transporterName = extractTransporterName(v.custom_fields) || ''
     setFormData(prev => ({
       ...prev,
       vehicleId: v.name,
-      transporterId: transporterName || '' 
+      transporterId: transporterName
     }))
     setVehicleSearch(v.name);
     setShowVehicleDropdown(false);
