@@ -34,5 +34,18 @@ class UserSeeder extends Seeder
                 'company_id' => 'OLA',
             ]
         );
+
+        User::updateOrCreate(
+            ['email' => 'driver@pea.com'],
+            [
+                'name' => 'Demo Driver (Abebe)',
+                'password' => Hash::make('admin123'),
+                'plain_password' => 'admin123',
+                'role' => 'DRIVER',
+                'vehicle_plate_number' => '3-A04763',
+                'phone_number' => '+251911223344',
+                'transporter_name' => 'Total Transporters',
+            ]
+        );
     }
 }

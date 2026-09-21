@@ -21,6 +21,16 @@ class DispatchController extends Controller
             $dispatches = Dispatch::where('destination_depot_id', $user->depot_id)
                 ->with(['depot', 'confirmation.confirmedByUser'])
                 ->get();
+        } elseif ($role === 'DRIVER') {
+            // Driver sees only dispatches for their assigned vehicle
+            $plate = trim($user->vehicle_plate_number ?? '');
+            if (!empty($plate)) {
+                $dispatches = Dispatch::whereRaw('LOWER(vehicle_id) = ?', [strtolower($plate)])
+                    ->with(['depot', 'confirmation.confirmedByUser'])
+                    ->get();
+            } else {
+                $dispatches = collect();
+            }
         } elseif ($role === 'OIL_COMPANY_ADMIN' || $role === 'OIL_COMPANY') {
             $dispatches = Dispatch::where('oil_company_id', $user->company_id)
                 ->with(['depot', 'confirmation.confirmedByUser'])
@@ -113,6 +123,19 @@ class DispatchController extends Controller
                     'debug' => [
                         'dispatch_depot' => $dispatch->destination_depot_id,
                         'user_depot' => $user->depot_id,
+                    ]
+                ], 403);
+            }
+        } elseif ($role === 'DRIVER') {
+            // Driver can only confirm dispatches for their assigned vehicle
+            $plate = trim($user->vehicle_plate_number ?? '');
+            $dispatchVehicle = trim($dispatch->vehicle_id ?? '');
+            if (empty($plate) || strtolower($plate) !== strtolower($dispatchVehicle)) {
+                return response()->json([
+                    'message' => 'Forbidden: This dispatch is not for your vehicle',
+                    'debug' => [
+                        'driver_plate' => $plate,
+                        'dispatch_vehicle' => $dispatchVehicle,
                     ]
                 ], 403);
             }

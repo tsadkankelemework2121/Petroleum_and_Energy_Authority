@@ -23,6 +23,9 @@ class User extends Authenticatable
         'company_id',
         'depot_id',
         'plain_password',
+        'vehicle_plate_number',
+        'phone_number',
+        'transporter_name',
     ];
 
     /**

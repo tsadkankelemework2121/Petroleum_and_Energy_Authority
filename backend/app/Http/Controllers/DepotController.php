@@ -20,10 +20,18 @@ class DepotController extends Controller
             $depots = Depot::where('id', $user->depot_id)->get();
         } elseif ($role === 'OIL_COMPANY_ADMIN' || $role === 'OIL_COMPANY') {
             $companyId = trim($user->company_id ?? '');
-            if (!empty($companyId)) {
-                $depots = Depot::whereRaw('LOWER(oil_company_id) = ?', [strtolower($companyId)])->get();
+            $companyName = trim($user->name ?? '');
+            if (!empty($companyId) || !empty($companyName)) {
+                $depots = Depot::where(function ($q) use ($companyId, $companyName) {
+                    if (!empty($companyId)) {
+                        $q->whereRaw('LOWER(oil_company_id) = ?', [strtolower($companyId)]);
+                    }
+                    if (!empty($companyName) && strtolower($companyName) !== strtolower($companyId)) {
+                        $q->orWhereRaw('LOWER(oil_company_id) = ?', [strtolower($companyName)]);
+                    }
+                })->get();
             } else {
-                $depots = collect();
+                $depots = Depot::all();
             }
         } else {
             // EPA can see all, or filter if provided
@@ -67,9 +75,9 @@ class DepotController extends Controller
         ]);
 
         if ($role === 'OIL_COMPANY' || $role === 'OIL_COMPANY_ADMIN') {
-            $validated['oil_company_id'] = $user->company_id;
+            $validated['oil_company_id'] = !empty($user->company_id) ? $user->company_id : ($request->input('oil_company_id') ?: $user->name);
         } else {
-            $validated['oil_company_id'] = $request->input('oil_company_id') ?: $validated['oil_company_id'] ?? null;
+            $validated['oil_company_id'] = $request->input('oil_company_id') ?: ($validated['oil_company_id'] ?? null);
         }
 
         $depot = Depot::create($validated);

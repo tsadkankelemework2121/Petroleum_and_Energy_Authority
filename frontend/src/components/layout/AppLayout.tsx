@@ -9,6 +9,7 @@ import {
   MapIcon,
   Squares2X2Icon,
   TruckIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline'
 import { cn } from '../../lib/cn'
 
@@ -34,6 +35,7 @@ const entitiesNav: NavItem[] = [
   { to: '/entities/oil-companies', label: 'Oil Companies', icon: BuildingOffice2Icon },
   { to: '/entities/transporters', label: 'Transporters', icon: TruckIcon },
   { to: '/entities/depots', label: 'Depots', icon: MapIcon },
+  { to: '/entities/drivers', label: 'Drivers', icon: UserGroupIcon },
 ]
 
 
@@ -61,16 +63,18 @@ function NavItemLink({ item, onNavigate }: { item: NavItem; onNavigate?: () => v
 }
 
 function Sidebar({ onNavigate, role }: { onNavigate?: () => void, role: UserRole }) {
-  const filteredEntitiesNav = role === 'DEPOT_ADMIN'
+  const filteredEntitiesNav = role === 'DEPOT_ADMIN' || role === 'DRIVER'
     ? []
     : role === 'OIL_COMPANY_ADMIN'
       ? entitiesNav.filter(n => n.to !== '/entities/oil-companies')
       : entitiesNav; // PEA admin sees everything
 
-  // DEPOT_ADMIN only sees Fuel Dispatch
-  const filteredPrimaryNav = role === 'DEPOT_ADMIN'
-    ? primaryNav.filter(n => n.to === '/fuel-dispatch')
-    : primaryNav;
+  // DEPOT_ADMIN only sees Fuel Dispatch, DRIVER only sees Driver Portal
+  const filteredPrimaryNav = role === 'DRIVER'
+    ? [{ to: '/driver', label: 'Driver Portal', icon: TruckIcon, end: true }]
+    : role === 'DEPOT_ADMIN'
+      ? primaryNav.filter(n => n.to === '/fuel-dispatch')
+      : primaryNav;
 
   return (
     <div className="flex h-full flex-col bg-white overflow-y-auto">
@@ -85,10 +89,10 @@ function Sidebar({ onNavigate, role }: { onNavigate?: () => void, role: UserRole
 
         <div className="min-w-0">
           <div className="truncate text-sm font-bold text-text">
-            {role === 'EPA_ADMIN' ? 'PEA ETHIOPIA' : role === 'DEPOT_ADMIN' ? 'DEPOT PORTAL' : 'OIL COMPANY'}
+            {role === 'EPA_ADMIN' ? 'PEA ETHIOPIA' : role === 'DEPOT_ADMIN' ? 'DEPOT PORTAL' : role === 'DRIVER' ? 'DRIVER PORTAL' : 'OIL COMPANY'}
           </div>
           <div className="truncate text-xs text-text-muted">
-            {role === 'DEPOT_ADMIN' ? 'Delivery Confirmation' : 'Ops Command Center'}
+            {role === 'DEPOT_ADMIN' ? 'Delivery Confirmation' : role === 'DRIVER' ? 'Offload Confirmation' : 'Ops Command Center'}
           </div>
         </div>
       </div>
@@ -138,6 +142,8 @@ export default function AppLayout() {
     if (pathname.includes('/entities/oil-companies')) return 'Oil Companies'
     if (pathname.includes('/entities/transporters')) return 'Transporters'
     if (pathname.includes('/entities/depots')) return 'Depots'
+    if (pathname.includes('/entities/drivers')) return 'Drivers Management'
+    if (pathname.includes('/driver')) return 'Driver Portal'
     if (pathname === '/settings') return 'Settings'
     if (pathname === '/profile') return 'Profile'
     return 'Dashboard'
@@ -206,7 +212,9 @@ export default function AppLayout() {
                       <div className="text-sm font-semibold text-text">
                         {user?.email ? user.email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'User'}
                       </div>
-                      <div className="text-xs text-text-muted">{role === 'EPA_ADMIN' ? 'PEA Admin' : 'Company Admin'}</div>
+                      <div className="text-xs text-text-muted">
+                        {role === 'EPA_ADMIN' ? 'PEA Admin' : role === 'DEPOT_ADMIN' ? 'Depot Admin' : role === 'DRIVER' ? 'Fleet Driver' : 'Company Admin'}
+                      </div>
                     </div>
 
                     {role === 'EPA_ADMIN' ? (

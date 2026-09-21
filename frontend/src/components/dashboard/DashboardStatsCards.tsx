@@ -14,10 +14,10 @@ export default function DashboardStatsCards({
   isLoading: boolean
 }) {
   return (
-    <div className="grid gap-3 grid-cols-2 lg:grid-cols-5">
+    <div className={`grid gap-3 grid-cols-2 ${kpiCards.length > 5 ? 'sm:grid-cols-3 lg:grid-cols-6' : 'lg:grid-cols-5'}`}>
       {isLoading ? (
         <>
-          {[1, 2, 3, 4, 5].map((i) => (
+          {Array.from({ length: kpiCards.length || 5 }).map((_, i) => (
             <SkeletonCard key={i} />
           ))}
         </>

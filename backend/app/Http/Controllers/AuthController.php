@@ -44,6 +44,9 @@ class AuthController extends Controller
                 'role' => $user->role,
                 'company_id' => $user->company_id,
                 'depot_id' => $user->depot_id,
+                'vehicle_plate_number' => $user->vehicle_plate_number,
+                'phone_number' => $user->phone_number,
+                'transporter_name' => $user->transporter_name,
             ],
         ]);
     }
@@ -59,6 +62,9 @@ class AuthController extends Controller
             'role' => $user->role,
             'company_id' => $user->company_id,
             'depot_id' => $user->depot_id,
+            'vehicle_plate_number' => $user->vehicle_plate_number,
+            'phone_number' => $user->phone_number,
+            'transporter_name' => $user->transporter_name,
         ]);
     }
 

@@ -20,7 +20,11 @@ const getInitialAuthState = () => {
     const role = (localStorage.getItem('userRole') as UserRole) || 'EPA_ADMIN';
     const companyId = localStorage.getItem('userCompanyId') || undefined;
     const depotId = localStorage.getItem('userDepotId') || undefined;
-    return { isAuthenticated: true, user: { email, role, companyId, depotId } as User };
+    const vehiclePlateNumber = localStorage.getItem('userVehiclePlateNumber') || undefined;
+    const phoneNumber = localStorage.getItem('userPhoneNumber') || undefined;
+    const transporterName = localStorage.getItem('userTransporterName') || undefined;
+    const name = localStorage.getItem('userName') || undefined;
+    return { isAuthenticated: true, user: { email, role, companyId, depotId, vehiclePlateNumber, phoneNumber, transporterName, name } as User };
   }
   return { isAuthenticated: false, user: null };
 };
@@ -36,12 +40,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Token is valid, update user info just in case
           const backendUser = response.data;
           const rawRole = (backendUser.role || '').toUpperCase();
-          const role: UserRole = rawRole.includes('DEPOT') ? 'DEPOT_ADMIN' : rawRole.includes('EPA') ? 'EPA_ADMIN' : 'OIL_COMPANY_ADMIN';
+          const role: UserRole = rawRole.includes('DRIVER') 
+            ? 'DRIVER' 
+            : rawRole.includes('DEPOT') 
+            ? 'DEPOT_ADMIN' 
+            : rawRole.includes('EPA') 
+            ? 'EPA_ADMIN' 
+            : 'OIL_COMPANY_ADMIN';
           const companyId = backendUser.company_id ? backendUser.company_id.toString() : undefined;
           const depotId = backendUser.depot_id ? backendUser.depot_id.toString() : undefined;
+          const vehiclePlateNumber = backendUser.vehicle_plate_number || undefined;
+          const phoneNumber = backendUser.phone_number || undefined;
+          const transporterName = backendUser.transporter_name || undefined;
+          const name = backendUser.name || undefined;
           setAuthState({
             isAuthenticated: true,
-            user: { email: backendUser.email, role, companyId, depotId }
+            user: { email: backendUser.email, role, companyId, depotId, vehiclePlateNumber, phoneNumber, transporterName, name }
           });
         })
         .catch(() => {
@@ -54,12 +68,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = (backendUser: any, token: string) => {
     // Map backend roles to frontend types
     const rawRole = (backendUser.role || '').toUpperCase();
-    const role: UserRole = rawRole.includes('DEPOT') ? 'DEPOT_ADMIN' : rawRole.includes('EPA') ? 'EPA_ADMIN' : 'OIL_COMPANY_ADMIN';
+    const role: UserRole = rawRole.includes('DRIVER')
+      ? 'DRIVER'
+      : rawRole.includes('DEPOT') 
+      ? 'DEPOT_ADMIN' 
+      : rawRole.includes('EPA') 
+      ? 'EPA_ADMIN' 
+      : 'OIL_COMPANY_ADMIN';
     const companyId = backendUser.company_id ? backendUser.company_id.toString() : undefined;
     const depotId = backendUser.depot_id ? backendUser.depot_id.toString() : undefined;
+    const vehiclePlateNumber = backendUser.vehicle_plate_number || undefined;
+    const phoneNumber = backendUser.phone_number || undefined;
+    const transporterName = backendUser.transporter_name || undefined;
+    const name = backendUser.name || undefined;
     const email = backendUser.email;
 
-    const newUser: User = { email, role, companyId, depotId };
+    const newUser: User = { email, role, companyId, depotId, vehiclePlateNumber, phoneNumber, transporterName, name };
 
     localStorage.setItem('authToken', token);
     localStorage.setItem('isAuthenticated', 'true');
@@ -74,6 +98,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('userDepotId', depotId);
     } else {
       localStorage.removeItem('userDepotId');
+    }
+    if (vehiclePlateNumber) {
+      localStorage.setItem('userVehiclePlateNumber', vehiclePlateNumber);
+    } else {
+      localStorage.removeItem('userVehiclePlateNumber');
+    }
+    if (phoneNumber) {
+      localStorage.setItem('userPhoneNumber', phoneNumber);
+    } else {
+      localStorage.removeItem('userPhoneNumber');
+    }
+    if (transporterName) {
+      localStorage.setItem('userTransporterName', transporterName);
+    } else {
+      localStorage.removeItem('userTransporterName');
+    }
+    if (name) {
+      localStorage.setItem('userName', name);
+    } else {
+      localStorage.removeItem('userName');
     }
 
     setAuthState({ isAuthenticated: true, user: newUser });

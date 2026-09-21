@@ -1,16 +1,20 @@
 import { useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import api from '../api/axios'
 import { fetchGpsVehicles } from '../data/gpsApi'
-import type { DispatchTask, GpsVehicle } from '../data/types'
+import type { Depot, DispatchTask, GpsVehicle } from '../data/types'
+import { mapDepot } from '../data/types'
 import { useAuth } from '../context/AuthContext'
 import { useQuery } from '@tanstack/react-query'
 import { parseStatusDurationHours, getStatusCategory } from '../lib/parseGpsDuration'
 import {
+  BuildingOffice2Icon,
   ExclamationTriangleIcon,
   GlobeAltIcon,
   SignalSlashIcon,
   TruckIcon,
 } from '@heroicons/react/24/outline'
+import { Card, CardHeader } from '../components/ui/Card'
 
 // Child components
 import DashboardStatsCards from '../components/dashboard/DashboardStatsCards'
@@ -56,6 +60,16 @@ export default function DashboardPage() {
       return await fetchGpsVehicles()
     },
     refetchInterval: 5 * 60 * 1000,
+  })
+
+  // 3. Fetch Depots for Oil Company
+  const { data: rawDepots = [] } = useQuery<Depot[]>({
+    queryKey: ['depots', companyId],
+    queryFn: async () => {
+      const res = await api.get('/depots', { params: companyId ? { oil_company_id: companyId } : {} })
+      return res.data.map(mapDepot)
+    },
+    enabled: !!user,
   })
 
   const isLoading = dispatchesLoading || gpsLoading
@@ -104,19 +118,38 @@ export default function DashboardPage() {
       (d) => d.status !== 'Delivered' && d.etaDateTime && new Date(d.etaDateTime) < now
     ).length
 
-    return [
+    const cards = [
       { label: 'Total Vehicles', value: String(totalVehicles), hint: isOilCompanyUser ? 'Company fleet' : 'All tracked vehicles', icon: TruckIcon },
       { label: 'Vehicles in Djibouti', value: String(djiboutiCount), hint: 'Inside Djibouti border', icon: GlobeAltIcon },
       { label: 'Vehicles on transit', value: String(transit), hint: 'Active dispatches now', icon: TruckIcon },
       { label: 'GPS offline > 24 hrs', value: String(offline), hint: 'Check connectivity', icon: SignalSlashIcon },
       { label: 'Exceeded ETA', value: String(exceeded), hint: 'Needs attention', icon: ExclamationTriangleIcon },
-    ] as const
-  }, [dispatches, relevantVehicles, isOilCompanyUser])
+    ]
+
+    if (isOilCompanyUser) {
+      cards.push({
+        label: 'Company Depots',
+        value: String(rawDepots.length),
+        hint: 'Active receiving depots',
+        icon: BuildingOffice2Icon,
+      })
+    }
+
+    return cards
+  }, [dispatches, relevantVehicles, isOilCompanyUser, rawDepots])
 
   // 4. Compute Daily Dispatch Summary (current week: Mon-Sun)
   const dailyDispatchSummary = useMemo(() => {
     const now = new Date()
-    // Get Monday of the current week
+    // Helper for local YYYY-MM-DD
+    const toLocalDateStr = (d: Date) => {
+      const year = d.getFullYear()
+      const month = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${year}-${month}-${day}`
+    }
+
+    // Get Monday of current week
     const dayOfWeek = now.getDay() // 0=Sun, 1=Mon, ...
     const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
     const monday = new Date(now)
@@ -129,7 +162,7 @@ export default function DashboardPage() {
       d.setDate(monday.getDate() + i)
       return {
         day: name,
-        date: d.toISOString().split('T')[0],
+        date: toLocalDateStr(d),
         benzineL: 0,
         dieselL: 0,
         jetFuelL: 0,
@@ -138,12 +171,23 @@ export default function DashboardPage() {
 
     dispatches.forEach((d) => {
       if (!d.dispatchDateTime) return
-      const dispDate = d.dispatchDateTime.split('T')[0]
-      const match = days.find((day) => day.date === dispDate)
+      let dispDateStr = ''
+      try {
+        const parsed = new Date(d.dispatchDateTime)
+        if (!isNaN(parsed.getTime())) {
+          dispDateStr = toLocalDateStr(parsed)
+        } else {
+          dispDateStr = d.dispatchDateTime.split('T')[0].split(' ')[0]
+        }
+      } catch {
+        dispDateStr = d.dispatchDateTime.split('T')[0].split(' ')[0]
+      }
+
+      const match = days.find((day) => day.date === dispDateStr)
       if (!match) return
-      if (d.fuelType === 'Benzine') match.benzineL += d.dispatchedLiters
-      else if (d.fuelType === 'Diesel') match.dieselL += d.dispatchedLiters
-      else if (d.fuelType === 'Jet Fuel') match.jetFuelL += d.dispatchedLiters
+      if (d.fuelType === 'Benzine') match.benzineL += Number(d.dispatchedLiters || 0)
+      else if (d.fuelType === 'Diesel') match.dieselL += Number(d.dispatchedLiters || 0)
+      else if (d.fuelType === 'Jet Fuel') match.jetFuelL += Number(d.dispatchedLiters || 0)
     })
 
     return days
@@ -236,6 +280,69 @@ export default function DashboardPage() {
 
         {/* Recent Dispatches */}
         <RecentDispatches recentDispatches={recentDispatches} />
+
+        {/* Company Depots Section for Oil Company */}
+        {isOilCompanyUser && (
+          <div className="md:col-span-12 min-w-0">
+            <Card>
+              <CardHeader
+                title="Company Depots"
+                subtitle={`Registered destination depots for ${companyId || 'your company'}`}
+                right={
+                  <Link
+                    to="/entities/depots"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-strong transition"
+                  >
+                    View & Manage Depots →
+                  </Link>
+                }
+              />
+              <div className="p-4 sm:p-6">
+                {rawDepots.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-text-muted">
+                    No depots registered yet.{' '}
+                    <Link to="/entities/depots" className="text-primary font-semibold hover:underline">
+                      Go to Depots section
+                    </Link>{' '}
+                    to register a new depot.
+                  </div>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {rawDepots.map((depot) => (
+                      <div
+                        key={depot.id}
+                        className="rounded-xl border border-[#D1D5DB] bg-white p-4 shadow-card hover:border-primary/50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="min-w-0">
+                            <h4 className="font-semibold text-text text-sm truncate">{depot.name}</h4>
+                            <p className="text-xs text-text-muted mt-0.5">
+                              {depot.location.city}, {depot.location.region}
+                            </p>
+                          </div>
+                          <span className="shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                            Active
+                          </span>
+                        </div>
+                        <div className="mt-3 space-y-1 text-xs text-text-muted border-t border-slate-100 pt-2">
+                          {depot.contacts.person1 && (
+                            <div className="truncate">Contact: <span className="text-text font-medium">{depot.contacts.person1}</span></div>
+                          )}
+                          {depot.contacts.phone1 && (
+                            <div className="truncate">Phone: <span className="text-text font-medium">{depot.contacts.phone1}</span></div>
+                          )}
+                          {depot.location.address && (
+                            <div className="truncate">Address: <span className="text-text font-medium">{depot.location.address}</span></div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   )

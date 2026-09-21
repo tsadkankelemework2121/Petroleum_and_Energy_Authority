@@ -20,16 +20,17 @@ export default function DepotsPage() {
   const [showForm, setShowForm] = useState(false)
   const [editingDepot, setEditingDepot] = useState<Depot | null>(null)
   const isOilCompany = user?.role === 'OIL_COMPANY_ADMIN' || user?.role?.toUpperCase() === 'OIL_COMPANY'
+  const effectiveCompanyId = user?.companyId || (isOilCompany ? (user?.email?.split('@')[0]?.toUpperCase() || '') : undefined)
   const canAdd = isOilCompany // PEA admin shouldn't create depots
   const canManage = isOilCompany || user?.role === 'EPA_ADMIN'
 
   const { data: rawDepots = [], isLoading } = useQuery<Depot[]>({
-    queryKey: ['depots'],
+    queryKey: ['depots', user?.companyId],
     queryFn: async () => {
       const res = await api.get('/depots', { params: user?.companyId ? { oil_company_id: user.companyId } : {} })
       return res.data.map(mapDepot)
     },
-    enabled: !!user?.companyId || user?.role === 'EPA_ADMIN',
+    enabled: !!user,
   })
 
   // Fetch available oil companies for PEA Admin creating depots
@@ -46,11 +47,17 @@ export default function DepotsPage() {
     enabled: user?.role === 'EPA_ADMIN',
   })
 
-  // Strict isolation: if Oil Company user is logged in, only show their depots
+  // Isolation: if Oil Company user is logged in, show their depots (backend also filters this)
   const items = useMemo(() => {
-    if (isOilCompany && user?.companyId) {
-      const target = user.companyId.trim().toLowerCase()
-      return rawDepots.filter((d) => (d.oilCompanyId || '').trim().toLowerCase() === target)
+    if (isOilCompany) {
+      if (user?.companyId) {
+        const target = user.companyId.trim().toLowerCase()
+        return rawDepots.filter((d) => {
+          const comp = (d.oilCompanyId || (d as any).oil_company_id || '').trim().toLowerCase()
+          return !comp || comp === target
+        })
+      }
+      return rawDepots
     }
     return rawDepots
   }, [rawDepots, isOilCompany, user?.companyId])
@@ -121,7 +128,7 @@ export default function DepotsPage() {
         title={editingDepot ? `Edit Depot: ${editingDepot.name}` : 'Add New Depot'}
       >
         <DepotForm
-          companyId={user?.companyId}
+          companyId={effectiveCompanyId}
           editingDepot={editingDepot}
           oilCompanies={registeredOilCompanies}
           onClose={() => {

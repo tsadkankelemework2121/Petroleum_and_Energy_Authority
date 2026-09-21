@@ -99,6 +99,15 @@ const DemoPage = () => {
               Log in as Depot Admin
             </button>
 
+            <button
+              type="button"
+              disabled={mutation.isPending}
+              onClick={() => handleDemoLogin('driver@pea.com')}
+              className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition-all"
+            >
+              Log in as Fleet Driver (3-A04763)
+            </button>
+
             {errorMsg && (
               <div className="text-red-600 text-sm bg-red-50/90 p-3 rounded-lg border border-red-100 mt-4 text-center font-medium">
                 {errorMsg}

@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import AppLayout from './components/layout/AppLayout'
 import DashboardPage from './pages/DashboardPage'
 import DepotsPage from './pages/DepotsPage'
+import DriversPage from './pages/DriversPage'
+import DriverPortalPage from './pages/DriverPortalPage'
 import FuelDispatchPage from './pages/FuelDispatchPage'
 import OilCompaniesPage from './pages/OilCompaniesPage'
 import ProfilePage from './pages/ProfilePage'
@@ -16,6 +18,9 @@ import { useAuth } from './context/AuthContext'
 
 function IndexRoute() {
   const { user } = useAuth()
+  if (user?.role === 'DRIVER') {
+    return <Navigate to="/driver" replace />
+  }
   if (user?.role === 'DEPOT_ADMIN') {
     return <Navigate to="/fuel-dispatch" replace />
   }
@@ -34,12 +39,14 @@ export default function App() {
           <Route path="/tracking" element={<TrackingPage />} />
           <Route path="/fuel-dispatch" element={<FuelDispatchPage />} />
           <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/driver" element={<DriverPortalPage />} />
 
           <Route path="/entities">
             <Route index element={<Navigate to="/entities/oil-companies" replace />} />
             <Route path="oil-companies" element={<OilCompaniesPage />} />
             <Route path="transporters" element={<TransportersPage />} />
             <Route path="depots" element={<DepotsPage />} />
+            <Route path="drivers" element={<DriversPage />} />
           </Route>
 
           <Route path="/settings" element={<SettingsPage />} />

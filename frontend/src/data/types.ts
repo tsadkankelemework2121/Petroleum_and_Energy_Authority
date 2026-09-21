@@ -1,10 +1,25 @@
-export type UserRole = 'EPA_ADMIN' | 'OIL_COMPANY_ADMIN' | 'DEPOT_ADMIN'
+export type UserRole = 'EPA_ADMIN' | 'OIL_COMPANY_ADMIN' | 'DEPOT_ADMIN' | 'DRIVER'
 
 export type User = {
   email: string
   role: UserRole
   companyId?: string // if role is OIL_COMPANY_ADMIN
   depotId?: string   // if role is DEPOT_ADMIN
+  vehiclePlateNumber?: string // if role is DRIVER
+  phoneNumber?: string
+  transporterName?: string
+  name?: string
+}
+
+export type Driver = {
+  id: number
+  name: string
+  email: string
+  vehicle_plate_number: string | null
+  phone_number: string | null
+  transporter_name: string | null
+  plain_password?: string | null
+  created_at?: string
 }
 
 export type FuelType = 'Benzine' | 'Diesel' | 'Jet Fuel'
@@ -151,6 +166,7 @@ export function mapDepot(d: any): Depot {
   return {
     ...d,
     id: d.id.toString(),
+    oilCompanyId: d.oil_company_id || d.oilCompanyId || '',
     location: {
       region: d.region || '—',
       city: d.city || '—',
