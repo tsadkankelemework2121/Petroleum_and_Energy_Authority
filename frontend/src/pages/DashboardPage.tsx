@@ -170,17 +170,22 @@ export default function DashboardPage() {
     })
 
     dispatches.forEach((d) => {
-      if (!d.dispatchDateTime) return
+      // Only show fuel that has been confirmed/delivered by the driver or depot
+      const isConfirmed = d.status === 'Delivered' || Boolean((d as any).confirmation)
+      if (!isConfirmed) return
+
+      const dt = d.dropOffDateTime || d.dispatchDateTime
+      if (!dt) return
       let dispDateStr = ''
       try {
-        const parsed = new Date(d.dispatchDateTime)
+        const parsed = new Date(dt)
         if (!isNaN(parsed.getTime())) {
           dispDateStr = toLocalDateStr(parsed)
         } else {
-          dispDateStr = d.dispatchDateTime.split('T')[0].split(' ')[0]
+          dispDateStr = dt.split('T')[0].split(' ')[0]
         }
       } catch {
-        dispDateStr = d.dispatchDateTime.split('T')[0].split(' ')[0]
+        dispDateStr = dt.split('T')[0].split(' ')[0]
       }
 
       const match = days.find((day) => day.date === dispDateStr)

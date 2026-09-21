@@ -129,14 +129,15 @@ export default function DispatchTable({
                       Confirm
                     </button>
                   )}
-                  {t.status === 'Delivered' && t.confirmation && (
+                  {(t.status === 'Delivered' || t.confirmation) && (
                     <button
                       type="button"
                       onClick={() => setViewConfirmation(t)}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition border border-emerald-200"
+                      title="View Confirmation"
                     >
                       <EyeIcon className="size-3.5" />
-                      View
+                      View Proof
                     </button>
                   )}
                 </td>

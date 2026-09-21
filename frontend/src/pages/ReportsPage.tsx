@@ -13,6 +13,7 @@ import { isVehicleInDjibouti } from '../lib/geofence'
 import OperationalAuditReport from '../components/reports/OperationalAuditReport'
 import DjiboutiGeofenceReport from '../components/reports/DjiboutiGeofenceReport'
 import FormalReportSection from '../components/reports/FormalReportSection'
+import RegionalMonthlyGainReport from '../components/reports/RegionalMonthlyGainReport'
 
 type FilterType = 'dispatch' | 'vehicle' | 'depot'
 
@@ -41,7 +42,7 @@ export default function ReportsPage() {
   const { user } = useAuth()
   const companyId = user?.companyId
 
-  const [activeTab, setActiveTab] = useState<'audit' | 'geofence' | 'registry'>('audit')
+  const [activeTab, setActiveTab] = useState<'audit' | 'regional' | 'geofence' | 'registry'>('regional')
   const [filterType, setFilterType] = useState<FilterType>('dispatch')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [expandedReportRow, setExpandedReportRow] = useState<number | null>(null)
@@ -338,10 +339,21 @@ export default function ReportsPage() {
       </div>
 
       {/* Tabs Menu - hidden on print */}
-      <div className="flex border-b border-[#D1D5DB] gap-6 mb-6 no-print">
+      <div className="flex border-b border-[#D1D5DB] gap-6 mb-6 no-print overflow-x-auto">
+        <button
+          onClick={() => setActiveTab('regional')}
+          className={`pb-3 font-semibold text-sm transition-all relative whitespace-nowrap ${
+            activeTab === 'regional' ? 'text-primary font-bold' : 'text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          Regional Monthly Gain
+          {activeTab === 'regional' && (
+            <div className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-primary rounded-t-full" />
+          )}
+        </button>
         <button
           onClick={() => setActiveTab('audit')}
-          className={`pb-3 font-semibold text-sm transition-all relative ${
+          className={`pb-3 font-semibold text-sm transition-all relative whitespace-nowrap ${
             activeTab === 'audit' ? 'text-primary font-bold' : 'text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -352,7 +364,7 @@ export default function ReportsPage() {
         </button>
         <button
           onClick={() => setActiveTab('geofence')}
-          className={`pb-3 font-semibold text-sm transition-all relative ${
+          className={`pb-3 font-semibold text-sm transition-all relative whitespace-nowrap ${
             activeTab === 'geofence' ? 'text-primary font-bold' : 'text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -363,7 +375,7 @@ export default function ReportsPage() {
         </button>
         <button
           onClick={() => setActiveTab('registry')}
-          className={`pb-3 font-semibold text-sm transition-all relative ${
+          className={`pb-3 font-semibold text-sm transition-all relative whitespace-nowrap ${
             activeTab === 'registry' ? 'text-primary font-bold' : 'text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -375,6 +387,14 @@ export default function ReportsPage() {
       </div>
 
       {/* Tab Contents */}
+      {activeTab === 'regional' && (
+        <RegionalMonthlyGainReport
+          dispatches={dispatches}
+          depots={depots}
+          depotsById={depotsById}
+        />
+      )}
+
       {activeTab === 'audit' && (
         <OperationalAuditReport
           dispatches={dispatches}

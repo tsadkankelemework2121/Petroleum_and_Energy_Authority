@@ -36,11 +36,11 @@ export default function DashboardDispatchCharts({
         <Card>
           <CardHeader
             title="Daily fuel dispatch — This week"
-            subtitle="Daily dispatched volume (liters) — Benzine / Diesel / Jet Fuel"
+            subtitle="Confirmed dispatched volume (liters) — Benzine / Diesel / Jet Fuel"
             right={
               <span className="inline-flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
                 <MapPinIcon className="size-4" />
-                Mon – Sun
+                Mon – Sun (Confirmed)
               </span>
             }
           />

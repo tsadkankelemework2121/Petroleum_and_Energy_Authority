@@ -124,13 +124,13 @@ export default function DispatchMobileCards({
                         <CheckCircleIcon className="size-3.5" /> Confirm Receipt
                       </button>
                     )}
-                    {t.status === 'Delivered' && t.confirmation && (
+                    {(t.status === 'Delivered' || t.confirmation) && (
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); setViewConfirmation(t); }}
-                        className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition"
+                        className="inline-flex items-center gap-1 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 hover:bg-emerald-100 transition border border-emerald-200"
                       >
-                        <EyeIcon className="size-3.5" /> View Photo
+                        <EyeIcon className="size-3.5" /> View Proof
                       </button>
                     )}
                   </div>

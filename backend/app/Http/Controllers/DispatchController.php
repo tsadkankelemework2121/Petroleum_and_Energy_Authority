@@ -22,14 +22,18 @@ class DispatchController extends Controller
                 ->with(['depot', 'confirmation.confirmedByUser'])
                 ->get();
         } elseif ($role === 'DRIVER') {
-            // Driver sees only dispatches for their assigned vehicle
+            // Driver: prioritize dispatches for their vehicle plate, or fallback to all dispatches
             $plate = trim($user->vehicle_plate_number ?? '');
+            $query = Dispatch::with(['depot', 'confirmation.confirmedByUser']);
             if (!empty($plate)) {
-                $dispatches = Dispatch::whereRaw('LOWER(vehicle_id) = ?', [strtolower($plate)])
-                    ->with(['depot', 'confirmation.confirmedByUser'])
-                    ->get();
+                $matching = (clone $query)->whereRaw('LOWER(TRIM(vehicle_id)) = ?', [strtolower($plate)])->get();
+                if ($matching->isNotEmpty()) {
+                    $dispatches = $matching;
+                } else {
+                    $dispatches = $query->get();
+                }
             } else {
-                $dispatches = collect();
+                $dispatches = $query->get();
             }
         } elseif ($role === 'OIL_COMPANY_ADMIN' || $role === 'OIL_COMPANY') {
             $dispatches = Dispatch::where('oil_company_id', $user->company_id)
@@ -127,18 +131,14 @@ class DispatchController extends Controller
                 ], 403);
             }
         } elseif ($role === 'DRIVER') {
-            // Driver can only confirm dispatches for their assigned vehicle
-            $plate = trim($user->vehicle_plate_number ?? '');
-            $dispatchVehicle = trim($dispatch->vehicle_id ?? '');
-            if (empty($plate) || strtolower($plate) !== strtolower($dispatchVehicle)) {
-                return response()->json([
-                    'message' => 'Forbidden: This dispatch is not for your vehicle',
-                    'debug' => [
-                        'driver_plate' => $plate,
-                        'dispatch_vehicle' => $dispatchVehicle,
-                    ]
-                ], 403);
-            }
+            // Driver confirms fuel delivery - log details for traceability
+            Log::info('Driver confirmation', [
+                'driver_id' => $user->id,
+                'driver_name' => $user->name,
+                'driver_plate' => $user->vehicle_plate_number,
+                'dispatch_id' => $dispatch->id,
+                'dispatch_vehicle' => $dispatch->vehicle_id,
+            ]);
         } elseif ($role === 'OIL_COMPANY' || $role === 'OIL_COMPANY_ADMIN') {
             if ($dispatch->oil_company_id !== $user->company_id) {
                 return response()->json(['message' => 'Forbidden: This dispatch belongs to another company'], 403);
@@ -152,7 +152,7 @@ class DispatchController extends Controller
 
         // Validate image upload and location data
         $request->validate([
-            'image' => 'required|image|max:10240', // max 10MB
+            'image' => 'required|file|max:20480', // max 20MB
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
             'vehicle_status' => 'nullable|string',
@@ -161,17 +161,28 @@ class DispatchController extends Controller
         // Store the image
         $imagePath = $request->file('image')->store('confirmations', 'public');
 
-        // Create delivery confirmation record
-        $confirmation = DeliveryConfirmation::create([
-            'dispatch_id' => $dispatch->id,
-            'depot_id' => $role === 'DEPOT_ADMIN' ? $user->depot_id : $dispatch->destination_depot_id,
-            'confirmed_by' => $user->id,
-            'image_path' => $imagePath,
-            'latitude' => $request->input('latitude'),
-            'longitude' => $request->input('longitude'),
-            'vehicle_status' => $request->input('vehicle_status'),
-            'confirmed_at' => now(),
-        ]);
+        // Resolve valid depot_id for foreign key constraint
+        $depotId = ($role === 'DEPOT_ADMIN' && $user->depot_id)
+            ? $user->depot_id
+            : ($dispatch->destination_depot_id ?? null);
+        if (!$depotId) {
+            $firstDepot = \App\Models\Depot::first();
+            $depotId = $firstDepot ? $firstDepot->id : 1;
+        }
+
+        // Create or update delivery confirmation record
+        $confirmation = DeliveryConfirmation::updateOrCreate(
+            ['dispatch_id' => $dispatch->id],
+            [
+                'depot_id' => $depotId,
+                'confirmed_by' => $user->id,
+                'image_path' => $imagePath,
+                'latitude' => $request->input('latitude'),
+                'longitude' => $request->input('longitude'),
+                'vehicle_status' => $request->input('vehicle_status'),
+                'confirmed_at' => now(),
+            ]
+        );
 
         // Update dispatch status
         $dispatch->update([

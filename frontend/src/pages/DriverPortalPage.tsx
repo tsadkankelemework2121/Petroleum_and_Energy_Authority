@@ -270,9 +270,16 @@ export default function DriverPortalPage() {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
-                      {d.pea_dispatch_no || `DISP-#${d.id}`}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                        {d.pea_dispatch_no || `DISP-#${d.id}`}
+                      </span>
+                      {(d.vehicle_id || d.vehicleId) && (
+                        <span className="text-[11px] font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+                          Vehicle: {d.vehicle_id || d.vehicleId}
+                        </span>
+                      )}
+                    </div>
                     <h4 className="mt-2 text-base font-bold text-text">
                       {d.dispatched_liters?.toLocaleString() || d.dispatchedLiters?.toLocaleString()} L of {d.fuel_type || d.fuelType}
                     </h4>
@@ -337,6 +344,9 @@ export default function DriverPortalPage() {
                     Destination
                   </th>
                   <th className="px-6 py-3.5 text-left text-xs font-semibold text-text-muted uppercase">
+                    Status
+                  </th>
+                  <th className="px-6 py-3.5 text-left text-xs font-semibold text-text-muted uppercase">
                     Delivered Date
                   </th>
                   <th className="px-6 py-3.5 text-left text-xs font-semibold text-text-muted uppercase">
@@ -358,6 +368,12 @@ export default function DriverPortalPage() {
                     </td>
                     <td className="px-6 py-3.5 text-xs text-text">
                       {d.depot?.name || `Depot #${d.destination_depot_id}`}
+                    </td>
+                    <td className="px-6 py-3.5">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                        <CheckCircleIcon className="size-3.5" />
+                        Confirmed
+                      </span>
                     </td>
                     <td className="px-6 py-3.5 text-xs text-text-muted">
                       {d.drop_off_datetime?.replace('T', ' ') || 'Confirmed'}
