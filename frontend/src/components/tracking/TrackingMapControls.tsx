@@ -30,7 +30,7 @@ export default function TrackingMapControls({
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              Logistics
+              Street Map
             </button>
             <button
               type="button"
@@ -42,17 +42,6 @@ export default function TrackingMapControls({
               }`}
             >
               Satellite
-            </button>
-            <button
-              type="button"
-              onClick={() => setMapStyle('dark')}
-              className={`rounded-full px-2.5 py-1 text-[10px] font-bold transition ${
-                mapStyle === 'dark'
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              Night
             </button>
           </div>
         )}

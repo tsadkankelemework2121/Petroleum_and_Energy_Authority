@@ -61,11 +61,11 @@ function NavItemLink({ item, onNavigate }: { item: NavItem; onNavigate?: () => v
 }
 
 function Sidebar({ onNavigate, role }: { onNavigate?: () => void, role: UserRole }) {
-  const filteredEntitiesNav = role === 'DEPOT_ADMIN' 
-    ? [] 
-    : role === 'OIL_COMPANY_ADMIN' 
+  const filteredEntitiesNav = role === 'DEPOT_ADMIN'
+    ? []
+    : role === 'OIL_COMPANY_ADMIN'
       ? entitiesNav.filter(n => n.to !== '/entities/oil-companies')
-      : entitiesNav;
+      : entitiesNav.filter(n => n.to !== '/entities/depots'); // PEA admin: no Depots (oil companies manage their own)
 
   // DEPOT_ADMIN only sees Fuel Dispatch
   const filteredPrimaryNav = role === 'DEPOT_ADMIN'
@@ -238,16 +238,16 @@ export default function AppLayout() {
                   <div className="absolute right-0 top-full mt-0 w-48 bg-white border border-gray-200 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
                     <div className="py-1">
                       <button
-                         onClick={() => navigate('/profile')}
-                         className="block w-full text-left px-5 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => navigate('/profile')}
+                        className="block w-full text-left px-5 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
                       >
-                         Profile
+                        Profile
                       </button>
                       <button
-                         onClick={() => navigate('/settings')}
-                         className="block w-full text-left px-5 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => navigate('/settings')}
+                        className="block w-full text-left px-5 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
                       >
-                         Settings
+                        Settings
                       </button>
                       <div className="my-1 border-t border-gray-100"></div>
                       <button
