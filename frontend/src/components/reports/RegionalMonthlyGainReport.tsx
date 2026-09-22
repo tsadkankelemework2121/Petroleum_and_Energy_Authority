@@ -7,7 +7,6 @@ import {
   ChevronRightIcon,
   ChevronDownIcon,
   ChevronUpIcon,
-  ArrowDownTrayIcon,
   PrinterIcon,
   ChartBarIcon,
 } from '@heroicons/react/24/outline'
